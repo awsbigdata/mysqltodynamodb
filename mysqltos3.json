@@ -1,0 +1,170 @@
+{
+  "objects": [
+    {
+      "directoryPath": "s3://testwest2/output/",
+      "dataFormat": {
+        "ref": "DataFormatId_liwHi"
+      },
+      "name": "DefaultDataNode1",
+      "id": "DataNodeId_cmsBc",
+      "type": "S3DataNode"
+    },
+    {
+      "instanceType": "#{myEC2InstanceType}",
+      "name": "Ec2Instance",
+      "actionOnTaskFailure": "terminate",
+      "securityGroups": "#{myEc2RdsSecurityGrps}",
+      "id": "Ec2Instance",
+      "type": "Ec2Resource",
+      "terminateAfter": "2 Hours"
+    },
+    {
+      "output": {
+        "ref": "S3OutputLocation"
+      },
+      "input": {
+        "ref": "SourceRDSTable"
+      },
+      "name": "RDStoS3CopyActivity",
+      "runsOn": {
+        "ref": "Ec2Instance"
+      },
+      "id": "RDStoS3CopyActivity",
+      "type": "CopyActivity"
+    },
+    {
+      "directoryPath": "#{myOutputS3Loc}/#{format(@scheduledStartTime, 'YYYY-MM-dd-HH-mm-ss')}",
+      "dataFormat": {
+        "ref": "DataFormatId_liwHi"
+      },
+      "name": "S3OutputLocation",
+      "id": "S3OutputLocation",
+      "type": "S3DataNode"
+    },
+    {
+      "output": {
+        "ref": "DataNodeId_cmsBc"
+      },
+      "input": {
+        "ref": "S3OutputLocation"
+      },
+      "name": "DefaultHiveActivity1",
+      "hiveScript": "#{myHivesql}",
+      "id": "HiveActivityId_ClG1i",
+      "runsOn": {
+        "ref": "EmrClusterId_IHNYU"
+      },
+      "type": "HiveActivity"
+    },
+    {
+      "failureAndRerunMode": "CASCADE",
+      "resourceRole": "DataPipelineDefaultResourceRole",
+      "role": "DataPipelineDefaultRole",
+      "scheduleType": "ONDEMAND",
+      "name": "Default",
+      "id": "Default"
+    },
+    {
+      "database": {
+        "ref": "DatabaseId_wcaxw"
+      },
+      "name": "SourceRDSTable",
+      "id": "SourceRDSTable",
+      "type": "SqlDataNode",
+      "table": "#{myRDSTableName}",
+      "selectQuery": "select * from #{table}"
+    },
+    {
+      "name": "DefaultDataFormat1",
+      "column": "id",
+      "id": "DataFormatId_liwHi",
+      "type": "CSV"
+    },
+    {
+      "connectionString": "#{myConnectionString}",
+      "*password": "#{*myRDSPassword}",
+      "name": "DefaultDatabase1",
+      "id": "DatabaseId_wcaxw",
+      "jdbcDriverJarUri": "#{myJDBCjar}",
+      "type": "JdbcDatabase",
+      "jdbcDriverClass": "#{myJdbcDriverClass}",
+      "username": "#{myRDSUsername}"
+    },
+    {
+      "name": "DefaultEmrCluster1",
+      "coreInstanceCount": "1",
+      "coreInstanceType": "m3.xlarge",
+      "id": "EmrClusterId_IHNYU",
+      "releaseLabel": "emr-4.8.0",
+      "masterInstanceType": "m3.xlarge",
+      "type": "EmrCluster",
+      "region": "us-east-1"
+    }
+  ],
+  "parameters": [
+    {
+      "description": "JDBC JAR file",
+      "id": "myJDBCjar",
+      "type": "AWS::S3::ObjectKey"
+    },
+    {
+      "description": "RDS MySQL password",
+      "id": "*myRDSPassword",
+      "type": "String"
+    },
+    {
+      "watermark": "DB jdbc:mysql://host/dbname",
+      "description": "RDS connectionString",
+      "id": "myConnectionString",
+      "type": "String"
+    },
+    {
+      "description": "Output S3 folder",
+      "id": "myOutputS3Loc",
+      "type": "AWS::S3::ObjectKey"
+    },
+    {
+      "description": "RDS MySQL username",
+      "id": "myRDSUsername",
+      "type": "String"
+    },
+    {
+      "helpText": "The name of an existing table or a new table that will be created based on the Create table SQL query parameter below.",
+      "description": "RDS MySQL table name",
+      "id": "myRDSTableName",
+      "type": "String"
+    },
+    {
+      "watermark": "security group name",
+      "helpText": "The names of one or more EC2 security groups that have access to the RDS cluster.",
+      "description": "Ec2 Security group(s)",
+      "isArray": "true",
+      "optional": "true",
+      "id": "myEc2RdsSecurityGrps",
+      "type": "String"
+    },
+    {
+      "default": "t1.micro",
+      "helpText": "The type of the EC2 instance that will be launched on your behalf to do the copy",
+      "description": "EC2 instance type",
+      "id": "myEC2InstanceType",
+      "type": "String"
+    },
+    {
+      "watermark": "com.mysql.jdbc.Driver",
+      "description": "RDS JdbcDriverClass",
+      "id": "myJdbcDriverClass",
+      "type": "String"
+    },
+    {
+      "watermark": "Hivesql",
+      "description": "Hive Script",
+      "id": "myHivesql",
+      "type": "String"
+    }
+  ],
+  "values": {
+    "myEC2InstanceType": "t1.micro",
+    "myJdbcDriverClass": "com.mysql.jdbc.Driver"
+  }
+}
